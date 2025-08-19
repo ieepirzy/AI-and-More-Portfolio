@@ -1,6 +1,5 @@
 import mcp
 import datetime
-import os
 import asyncio
 import json
 import sys
@@ -48,21 +47,48 @@ class MCPDatetimetoolserver:
         else:
             raise ValueError(f"Tool '{toolname}' not found.")
         
+    async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            tool_name = request.get("tool)")
+            if not tool_name:
+                return {"status": "error", "error":"no tool specified"}
+            
+            if tool_name not in self.tools:
+                return {"status": "error", "error": "No tool with name {tool_name} found."}
+            result = self.handle_tool_call(tool_name)
+            return {
+                "status": "success",
+                "result": result,
+                "metadata": {
+                    "tool": tool_name,
+                    "timestamp": datetime.datetime.now().isoformat()
+                }
+            }
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
 
         
-
+        
 """
 Normally I would like to use a library such as httpx here to allow requests outside the local network.
 However, for this exercise, we will keep it simple and run the server and AI model locally.
 """
 
-
 async def main():
     # Create an MCP server instance
+    datetime_server = MCPDatetimetoolserver
     server = mcp.Server()
+        
+
+    #registering, apparently required??
+    server.register_tools(datetime_server.tools)
+    server.set_handler(datetime_server.handle_request)
+
     await server.run()
 
-   
+if __name__ == "__main__":
+    asyncio.run(main())
 
 
 
